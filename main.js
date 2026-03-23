@@ -62,8 +62,8 @@ function createTray() {
 
 function createMascotWindow(userId) {
   const win = new BrowserWindow({
-    width: 120,
-    height: 160,
+    width: 200,
+    height: 300,
     transparent: true,
     frame: false,
     alwaysOnTop: true,

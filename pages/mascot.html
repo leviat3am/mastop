@@ -8,27 +8,27 @@
         box-sizing: border-box;
       }
       body {
-        width: 120px;
-        height: 160px;
-        background: transparent;
+        width: max-content;
+        height: max-content;
+        background: rgba(255, 255, 255, 0.5);
         overflow: hidden;
         user-select: none;
       }
       #bubble {
         position: absolute;
-        top: 0;
+        bottom: 90px; /* 마스코트 높이 + 간격 */
         left: 50%;
         transform: translateX(-50%);
         background: white;
         border-radius: 10px;
         border: 1px solid #ddd;
-        padding: 5px 8px;
+        padding: 4px 8px;
         font-size: 11px;
         font-family: sans-serif;
-        white-space: nowrap;
-        max-width: 110px;
-        white-space: normal;
-        word-break: keep-all;
+        white-space: pre-wrap;
+        word-break: break-all;
+        max-width: 200px;
+        width: max-content;
         display: none;
         box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
       }
@@ -79,7 +79,9 @@
         }
 
         isShowing = true;
-        const text = messageQueue.shift();
+        let text = messageQueue.shift();
+        if (text.length > 50) text = text.substring(0, 50) + "...";
+
         bubble.textContent = text;
         bubble.style.display = "block";
 
@@ -88,6 +90,12 @@
           setTimeout(processQueue, 300);
         }, 3000);
       }
+
+      // 테스트용 - 3초 후 버블 강제 표시
+      setTimeout(() => {
+        messageQueue.push("어쩔티비");
+        if (!isShowing) processQueue();
+      }, 1000);
     </script>
   </body>
 </html>
