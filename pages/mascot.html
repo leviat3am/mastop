@@ -51,10 +51,62 @@
   </head>
   <body>
     <div id="bubble"></div>
-    <div id="mascot">🐸</div>
+    <img
+      id="mascot"
+      src="../assets/idle_1.png"
+      style="
+        width: 80px;
+        height: 80px;
+        object-fit: contain;
+        image-rendering: pixelated;
+        position: absolute;
+        bottom: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        cursor: pointer;
+      "
+    />
 
     <script>
       const userId = "temp-user";
+      const mascotImg = document.getElementById("mascot");
+      let isJumping = false;
+
+      // idle 애니메이션 (1↔2 번갈아가며)
+      const idleFrames = ["../assets/idle_1.png", "../assets/idle_2.png"];
+      let idleIndex = 0;
+
+      const idleInterval = setInterval(() => {
+        if (!isJumping) {
+          mascotImg.src = idleFrames[idleIndex];
+          idleIndex = (idleIndex + 1) % idleFrames.length;
+        }
+      }, 400);
+
+      // click 시 jump 애니메이션
+      const jumpFrames = [
+        "../assets/jump_1.png",
+        "../assets/jump_2.png",
+        "../assets/jump_3.png",
+      ];
+
+      mascotImg.addEventListener("click", () => {
+        if (isJumping) return;
+        isJumping = true;
+
+        let jumpIndex = 0;
+        const jumpInterval = setInterval(() => {
+          mascotImg.src = jumpFrames[jumpIndex];
+          jumpIndex++;
+          if (jumpIndex >= jumpFrames.length) {
+            clearInterval(jumpInterval);
+            isJumping = false;
+          }
+        }, 150);
+
+        window.electron.openMenu(userId);
+      });
+
       const bubble = document.getElementById("bubble");
       const mascot = document.getElementById("mascot");
       const messageQueue = [];
