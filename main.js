@@ -12,7 +12,7 @@ const WebSocket = require("ws");
 
 let wsClient = null;
 
-const store = new Store();
+const store = new Store({ projectName: "mastop" });
 let tray = null;
 const mascotWindows = new Map();
 

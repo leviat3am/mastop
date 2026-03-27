@@ -35,37 +35,18 @@
       #mascot {
         width: 80px;
         height: 80px;
-        background: rgba(100, 200, 100, 0.8);
-        border-radius: 50%;
         position: absolute;
         bottom: 10px;
         left: 50%;
         transform: translateX(-50%);
         cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 40px;
+        image-rendering: pixelated;
       }
     </style>
   </head>
   <body>
     <div id="bubble"></div>
-    <img
-      id="mascot"
-      src="../assets/idle_1.png"
-      style="
-        width: 80px;
-        height: 80px;
-        object-fit: contain;
-        image-rendering: pixelated;
-        position: absolute;
-        bottom: 10px;
-        left: 50%;
-        transform: translateX(-50%);
-        cursor: pointer;
-      "
-    />
+    <img id="mascot" src="../assets/frog/idle_1.png" />
 
     <script>
       const userId = "temp-user";
@@ -73,7 +54,7 @@
       let isJumping = false;
 
       // idle 애니메이션 (1↔2 번갈아가며)
-      const idleFrames = ["../assets/idle_1.png", "../assets/idle_2.png"];
+      const idleFrames = ["../assets/frog/idle_1.png", "../assets/frog/idle_2.png"];
       let idleIndex = 0;
 
       const idleInterval = setInterval(() => {
@@ -85,9 +66,9 @@
 
       // click 시 jump 애니메이션
       const jumpFrames = [
-        "../assets/jump_1.png",
-        "../assets/jump_2.png",
-        "../assets/jump_3.png",
+        "../assets/frog/jump_1.png",
+        "../assets/frog/jump_2.png",
+        "../assets/frog/jump_3.png",
       ];
 
       mascotImg.addEventListener("click", () => {

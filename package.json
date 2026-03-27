@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "electron-store": "^11.0.2",
+    "jimp": "^0.22.12",
     "ws": "^8.20.0"
   }
 }
