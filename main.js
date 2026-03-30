@@ -7,19 +7,37 @@ const {
   ipcMain,
 } = require("electron");
 const path = require("path");
-const Store = require("electron-store").default;
-const WebSocket = require("ws");
+const fs = require("fs");
+const { WebSocket } = require("ws");
 
 let wsClient = null;
-
-const store = new Store({ projectName: "mastop" });
+let pingInterval = null;
 let tray = null;
 const mascotWindows = new Map();
 
-const gotLock = app.requestSingleInstanceLock();
-if (!gotLock) {
-  app.quit();
+function storeGet(key) {
+  try {
+    const p = path.join(app.getPath("userData"), "store.json");
+    return JSON.parse(fs.readFileSync(p, "utf8"))[key];
+  } catch { return null; }
 }
+function storeSet(key, value) {
+  const p = path.join(app.getPath("userData"), "store.json");
+  let data = {};
+  try { data = JSON.parse(fs.readFileSync(p, "utf8")); } catch {}
+  data[key] = value;
+  fs.writeFileSync(p, JSON.stringify(data));
+}
+function storeDelete(key) {
+  const p = path.join(app.getPath("userData"), "store.json");
+  let data = {};
+  try { data = JSON.parse(fs.readFileSync(p, "utf8")); } catch {}
+  delete data[key];
+  fs.writeFileSync(p, JSON.stringify(data));
+}
+
+const gotLock = app.requestSingleInstanceLock();
+if (!gotLock) app.quit();
 
 app.whenReady().then(() => {
   if (process.defaultApp) {
@@ -29,15 +47,12 @@ app.whenReady().then(() => {
   } else {
     app.setAsDefaultProtocolClient("mastop");
   }
+
   createTray();
-
-  // 저장된 JWT 있으면 바로 시작
-  const token = store.get("jwt");
-  if (token) {
-    console.log("trying auto login...");
-  }
-
   createMascotWindow("temp-user");
+
+  const token = storeGet("jwt");
+  if (token) connectWebSocket(token);
 });
 
 function createTray() {
@@ -47,10 +62,7 @@ function createTray() {
 
   const menu = Menu.buildFromTemplate([
     { label: "친구 추가 / 관리", click: () => openSettingsWindow("friends") },
-    {
-      label: "전체 알림 설정",
-      click: () => openSettingsWindow("notifications"),
-    },
+    { label: "전체 알림 설정", click: () => openSettingsWindow("notifications") },
     { label: "앱 설정", click: () => openSettingsWindow("settings") },
     { type: "separator" },
     { label: "종료", click: () => app.quit() },
@@ -73,7 +85,7 @@ function createMascotWindow(userId) {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      preload: path.join(__dirname, "preload.js"),
+      preload: path.join(__dirname, "preload.cjs"),
     },
   });
 
@@ -87,8 +99,12 @@ function openSettingsWindow(page) {
   win.loadFile(`pages/${page}.html`);
 }
 
-// 캐릭터 클릭 시 팝업 메뉴
-ipcMain.on("open-menu", (e, { userId }) => {
+ipcMain.on("hide-mascot", (_e, { userId }) => {
+  const win = mascotWindows.get(userId);
+  if (win) win.hide();
+});
+
+ipcMain.on("open-menu", (_e, { userId }) => {
   const win = mascotWindows.get(userId);
   if (!win) return;
 
@@ -105,21 +121,19 @@ ipcMain.on("open-menu", (e, { userId }) => {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      preload: path.join(__dirname, "preload.js"),
+      preload: path.join(__dirname, "preload.cjs"),
     },
   });
   menu.loadFile("pages/menu.html");
   menu.once("blur", () => menu.close());
 });
 
-// macOS
 app.on("open-url", (event, url) => {
   event.preventDefault();
   handleDeepLink(url);
 });
 
-// Windows
-app.on("second-instance", (event, argv) => {
+app.on("second-instance", (_event, argv) => {
   const url = argv.find((arg) => arg.startsWith("mastop://"));
   if (url) handleDeepLink(url);
 });
@@ -127,68 +141,52 @@ app.on("second-instance", (event, argv) => {
 function handleDeepLink(url) {
   const token = new URL(url).searchParams.get("token");
   if (token) {
-    store.set("jwt", token);
-    console.log("JWT saved!");
+    storeSet("jwt", token);
     connectWebSocket(token);
   }
 }
 
 function connectWebSocket(token) {
-  if (wsClient) wsClient.terminate();
+  if (!token) return;
 
-  wsClient = new WebSocket("ws://localhost:3000");
+  if (wsClient) {
+    wsClient.removeAllListeners();
+    try { wsClient.terminate(); } catch (_) {}
+  }
+  if (pingInterval) {
+    clearInterval(pingInterval);
+    pingInterval = null;
+  }
+
+  wsClient = new WebSocket("ws://localhost:3005");
+
+  wsClient.on("error", (err) => {
+    console.log("WS error:", err.message);
+  });
 
   wsClient.on("open", () => {
     console.log("WS connected!");
     wsClient.send(JSON.stringify({ type: "authenticate", token }));
+    pingInterval = setInterval(() => {
+      if (wsClient.readyState === WebSocket.OPEN) {
+        wsClient.send(JSON.stringify({ type: "ping" }));
+      }
+    }, 30000);
   });
 
   wsClient.on("message", (data) => {
     const msg = JSON.parse(data);
-
-    if (msg.type === "auth_success") {
-      console.log("WS auth success!");
-    }
-
-    // if (msg.type === "new_message") {
-    //   const win = mascotWindows.get("temp-user");
-    //   if (win) {
-    //     win.webContents.send("show-bubble", {
-    //       text: msg.content,
-    //       fromUserId: msg.fromUserId,
-    //     });
-    //   }
-    // }
-
     if (msg.type === "new_message") {
-      console.log("new_message 수신:", msg);
       const win = mascotWindows.get("temp-user");
-      console.log("win:", win);
-      if (win) {
-        win.webContents.send("show-bubble", {
-          text: msg.content,
-          fromUserId: msg.fromUserId,
-        });
-      }
+      if (win) win.webContents.send("show-bubble", { text: msg.content, fromUserId: msg.fromUserId });
     }
-
-    if (msg.type === "auth_error") {
-      store.delete("jwt");
-      console.log("JWT expired!");
-    }
+    if (msg.type === "auth_error") storeDelete("jwt");
   });
 
   wsClient.on("close", () => {
-    console.log("WS disconnected. reconnecting...");
-    setTimeout(() => connectWebSocket(store.get("jwt")), 3000);
+    const savedToken = storeGet("jwt");
+    if (savedToken) setTimeout(() => connectWebSocket(savedToken), 3000);
   });
-
-  // ping 30초마다
-  setInterval(() => {
-    if (wsClient.readyState === WebSocket.OPEN) {
-      wsClient.send(JSON.stringify({ type: "ping" }));
-    }
-  }, 30000);
 }
 
 app.on("window-all-closed", (e) => e.preventDefault());
