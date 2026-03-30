@@ -99,6 +99,22 @@ function openSettingsWindow(page) {
   win.loadFile(`pages/${page}.html`);
 }
 
+let loginWindow = null;
+
+ipcMain.on("open-login", () => {
+  if (loginWindow) return;
+
+  const mascotWin = mascotWindows.get("temp-user");
+  if (mascotWin) mascotWin.setAlwaysOnTop(false);
+
+  loginWindow = new BrowserWindow({ width: 500, height: 600 });
+  loginWindow.loadURL("http://localhost:3005/auth/google");
+  loginWindow.on("closed", () => {
+    loginWindow = null;
+    if (mascotWin) mascotWin.setAlwaysOnTop(true);
+  });
+});
+
 ipcMain.on("hide-mascot", (_e, { userId }) => {
   const win = mascotWindows.get(userId);
   if (win) win.hide();
@@ -143,6 +159,9 @@ function handleDeepLink(url) {
   if (token) {
     storeSet("jwt", token);
     connectWebSocket(token);
+    if (loginWindow) { loginWindow.close(); loginWindow = null; }
+    const win = mascotWindows.get("temp-user");
+    if (win) win.webContents.send("login-success");
   }
 }
 

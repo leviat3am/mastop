@@ -42,11 +42,27 @@
         cursor: pointer;
         image-rendering: pixelated;
       }
+      #login-btn {
+        position: absolute;
+        bottom: 100px;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 6px 12px;
+        background: #4285f4;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 11px;
+        font-family: sans-serif;
+        cursor: pointer;
+        white-space: nowrap;
+      }
     </style>
   </head>
   <body>
     <div id="bubble"></div>
-    <img id="mascot" src="../assets/frog/idle_1.png" />
+    <button id="login-btn">Google 로그인</button>
+    <img id="mascot" src="../assets/frog/idle_1.png" style="display:none;" />
 
     <script>
       const userId = "temp-user";
@@ -124,11 +140,17 @@
         }, 3000);
       }
 
-      // 테스트용 - 3초 후 버블 강제 표시
-      setTimeout(() => {
-        messageQueue.push("어쩔티비");
-        if (!isShowing) processQueue();
-      }, 1000);
+      // 로그인 버튼
+      const loginBtn = document.getElementById("login-btn");
+      loginBtn.addEventListener("click", () => {
+        window.electron.openLogin();
+      });
+
+      // 로그인 성공 시 버튼 숨기고 개구리 표시
+      window.electron.onLoginSuccess(() => {
+        loginBtn.style.display = "none";
+        mascotImg.style.display = "block";
+      });
     </script>
   </body>
 </html>
