@@ -19,19 +19,25 @@ function storeGet(key) {
   try {
     const p = path.join(app.getPath("userData"), "store.json");
     return JSON.parse(fs.readFileSync(p, "utf8"))[key];
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 function storeSet(key, value) {
   const p = path.join(app.getPath("userData"), "store.json");
   let data = {};
-  try { data = JSON.parse(fs.readFileSync(p, "utf8")); } catch {}
+  try {
+    data = JSON.parse(fs.readFileSync(p, "utf8"));
+  } catch {}
   data[key] = value;
   fs.writeFileSync(p, JSON.stringify(data));
 }
 function storeDelete(key) {
   const p = path.join(app.getPath("userData"), "store.json");
   let data = {};
-  try { data = JSON.parse(fs.readFileSync(p, "utf8")); } catch {}
+  try {
+    data = JSON.parse(fs.readFileSync(p, "utf8"));
+  } catch {}
   delete data[key];
   fs.writeFileSync(p, JSON.stringify(data));
 }
@@ -62,7 +68,10 @@ function createTray() {
 
   const menu = Menu.buildFromTemplate([
     { label: "친구 추가 / 관리", click: () => openSettingsWindow("friends") },
-    { label: "전체 알림 설정", click: () => openSettingsWindow("notifications") },
+    {
+      label: "전체 알림 설정",
+      click: () => openSettingsWindow("notifications"),
+    },
     { label: "앱 설정", click: () => openSettingsWindow("settings") },
     { type: "separator" },
     { label: "종료", click: () => app.quit() },
@@ -108,7 +117,7 @@ ipcMain.on("open-login", () => {
   if (mascotWin) mascotWin.setAlwaysOnTop(false);
 
   loginWindow = new BrowserWindow({ width: 500, height: 600 });
-  loginWindow.loadURL("http://localhost:3005/auth/google");
+  loginWindow.loadURL("http://localhost:3000/auth/google");
   loginWindow.on("closed", () => {
     loginWindow = null;
     if (mascotWin) mascotWin.setAlwaysOnTop(true);
@@ -159,7 +168,10 @@ function handleDeepLink(url) {
   if (token) {
     storeSet("jwt", token);
     connectWebSocket(token);
-    if (loginWindow) { loginWindow.close(); loginWindow = null; }
+    if (loginWindow) {
+      loginWindow.close();
+      loginWindow = null;
+    }
     const win = mascotWindows.get("temp-user");
     if (win) win.webContents.send("login-success");
   }
@@ -170,14 +182,16 @@ function connectWebSocket(token) {
 
   if (wsClient) {
     wsClient.removeAllListeners();
-    try { wsClient.terminate(); } catch (_) {}
+    try {
+      wsClient.terminate();
+    } catch (_) {}
   }
   if (pingInterval) {
     clearInterval(pingInterval);
     pingInterval = null;
   }
 
-  wsClient = new WebSocket("ws://localhost:3005");
+  wsClient = new WebSocket("ws://localhost:3000");
 
   wsClient.on("error", (err) => {
     console.log("WS error:", err.message);
@@ -197,7 +211,11 @@ function connectWebSocket(token) {
     const msg = JSON.parse(data);
     if (msg.type === "new_message") {
       const win = mascotWindows.get("temp-user");
-      if (win) win.webContents.send("show-bubble", { text: msg.content, fromUserId: msg.fromUserId });
+      if (win)
+        win.webContents.send("show-bubble", {
+          text: msg.content,
+          fromUserId: msg.fromUserId,
+        });
     }
     if (msg.type === "auth_error") storeDelete("jwt");
   });

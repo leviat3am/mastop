@@ -4,7 +4,7 @@
  *
  * 레이아웃:
  *   row 0: idle  (idle_1.png, idle_2.png)
- *   row 1: click (jump_1.png, jump_2.png, jump_3.png)
+ *   row 1: click (jump_1.png, jump_2.png)
  *
  * 사용: node make-sprite.js
  */
@@ -16,8 +16,8 @@ const ASSETS = path.join(__dirname, "assets/frog");
 const OUTPUT = path.join(ASSETS, "sprite.png");
 
 const ROWS = [
-  ["idle_1.png", "idle_2.png"],           // row 0 — idle
-  ["jump_1.png", "jump_2.png", "jump_3.png"], // row 1 — click
+  ["idle_1.png", "idle_2.png"], // row 0 — idle
+  ["jump_1.png", "jump_2.png"], // row 1 — click
 ];
 
 async function main() {
