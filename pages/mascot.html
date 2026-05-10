@@ -62,7 +62,7 @@
   <body>
     <div id="bubble"></div>
     <button id="login-btn">Google 로그인</button>
-    <img id="mascot" src="../assets/frog/idle_1.png" style="display:none;" />
+    <img id="mascot" src="../assets/frog/idle_1.png" style="display: none" />
 
     <script>
       const userId = "temp-user";
@@ -70,7 +70,10 @@
       let isJumping = false;
 
       // idle 애니메이션 (1↔2 번갈아가며)
-      const idleFrames = ["../assets/frog/idle_1.png", "../assets/frog/idle_2.png"];
+      const idleFrames = [
+        "../assets/frog/idle_1.png",
+        "../assets/frog/idle_2.png",
+      ];
       let idleIndex = 0;
 
       const idleInterval = setInterval(() => {
@@ -84,7 +87,6 @@
       const jumpFrames = [
         "../assets/frog/jump_1.png",
         "../assets/frog/jump_2.png",
-        "../assets/frog/jump_3.png",
       ];
 
       mascotImg.addEventListener("click", () => {
@@ -100,8 +102,6 @@
             isJumping = false;
           }
         }, 150);
-
-        window.electron.openMenu(userId);
       });
 
       const bubble = document.getElementById("bubble");
